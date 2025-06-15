@@ -1,30 +1,34 @@
 import uuid
 from django.db import models
 
-class Trabajadores(models.Model):
+class Trabajador(models.Model):
     trabajador_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nombre = models.CharField(max_length=100)
 
     class Meta:
         db_table = 'Trabajadores'
-        verbose_name_plural = 'Trabajadores'
 
-class Ventas(models.Model):
-    venta_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    fecha = models.DateTimeField(auto_now_add=True)
-    monto = models.DecimalField(max_digits=10, decimal_places=2)
-    cantidad_productos = models.PositiveIntegerField()
-    trabajador = models.ForeignKey(Trabajadores, on_delete=models.CASCADE, editable=False)
-
-    class Meta:
-        db_table = 'Ventas'
-        ordering = ['fecha']
-
-class Metas(models.Model):
-    metas_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Indicador(models.Model):
+    indicador_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nombre = models.CharField(max_length=100)
+    nombre_indicador = models.CharField(max_length=100)
+    meta = models.PositiveIntegerField()
+    frecuencia = models.CharField(
+        max_length=100, choices=[('D', 'diario'), ('S', 'semanal'), ('M', 'mensual'), ('A', 'anual')],
+        default='semanal'
+    )
     fecha_inicio = models.DateTimeField(blank=True, null=True)
-    fecha_fin = models.DateTimeField(blank=True, null=True)
-    cantidad_meta = models.PositiveIntegerField()
+    activo = models.BooleanField(default=True)
 
     class Meta:
-        db_table = 'Metas'
+        db_table = 'Indicadores'
+
+class Registro(models.Model):
+    registro_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    fecha = models.DateTimeField(blank=True, null=True)
+    cantidad = models.PositiveIntegerField()
+    indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, editable=False)
+    trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE, editable=False)
+
+    class Meta:
+        db_table = 'Registros'

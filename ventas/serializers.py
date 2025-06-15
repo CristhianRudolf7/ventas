@@ -1,23 +1,17 @@
 from rest_framework import serializers
-from .models import Trabajadores, Ventas, Metas
+from .models import Trabajador, Indicador, Registro
 
 class TrabajadoresSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Trabajadores
-        fields = ['trabajador_id', 'nombre']
-
-class VentasSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ventas
+        model = Trabajador
         fields = '__all__'
 
 class MetasSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Metas
+        model = Indicador
         fields = '__all__'
 
-class VentasDashboardSerializer(serializers.ModelSerializer):
-    trabajador_nombre = serializers.CharField(source='trabajador.nombre')
+class RegistrosSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Ventas
-        fields = ['venta_id', 'fecha', 'monto', 'cantidad_productos', 'trabajador_nombre']
+        model = Registro
+        fields = '__all__'

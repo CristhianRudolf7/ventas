@@ -1,6 +1,6 @@
 from rest_framework import generics
-from .models import Trabajadores, Ventas, Metas
-from .serializers import TrabajadoresSerializer, VentasSerializer, MetasSerializer
+from .models import Trabajador, Indicador, Registro
+from .serializers import TrabajadoresSerializer, MetasSerializer, RegistrosSerializer
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Sum, Count, Max
@@ -9,118 +9,113 @@ from rest_framework.response import Response
 
 class DashboardView(APIView):
     def get(self, request):
-        # 1. Trabajador con más ventas (por monto total)
-        trabajador_top = Trabajadores.objects.annotate(
-            total_ventas=Sum('ventas__monto'),
-            num_ventas=Count('ventas')
-        ).order_by('-total_ventas').first()
+        # 1. Trabajador con más registros (por cantidad total)
+        trabajador_top = Trabajador.objects.annotate(
+            total_registros=Sum('registro__cantidad'),
+            num_registros=Count('registro')
+        ).order_by('-total_registros').first()
 
-        # 2. Distribución de productos por venta
-        distribucion_productos = Ventas.objects.values('cantidad_productos').annotate(
-            total=Count('venta_id')
-        ).order_by('cantidad_productos')
+        # 2. Distribución de registros por cantidad
+        distribucion_registros = Registro.objects.values('cantidad').annotate(
+            total=Count('registro_id')
+        ).order_by('cantidad')
 
-        # 3. Total de ventas hoy
+        # 3. Total de registros hoy
         hoy = timezone.now().date()
-        ventas_hoy = Ventas.objects.filter(fecha__date=hoy).aggregate(
-            total=Sum('monto'),
-            cantidad=Count('venta_id')
+        registros_hoy = Registro.objects.filter(fecha__date=hoy).aggregate(
+            total=Sum('cantidad'),
+            cantidad=Count('registro_id')
         )
 
-        # 4. Meta del mes actual vs ventas reales
+        # 4. Indicador del mes actual vs registros reales
         hoy = timezone.now()
         inicio_mes = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         fin_mes = (inicio_mes + timedelta(days=32)).replace(day=1) - timedelta(days=1)
-        
-        meta_mes = Metas.objects.filter(
+
+        indicador_mes = Indicador.objects.filter(
             fecha_inicio__lte=fin_mes,
-            fecha_fin__gte=inicio_mes
+            activo=True
         ).first()
-        
-        ventas_mes = Ventas.objects.filter(
+
+        registros_mes = Registro.objects.filter(
             fecha__range=(inicio_mes, fin_mes)
-        ).aggregate(total=Sum('monto'))['total'] or 0
+        ).aggregate(total=Sum('cantidad'))['total'] or 0
 
-        # 5. Últimas 5 ventas registradas
-        ultimas_ventas = Ventas.objects.select_related('trabajador').order_by('-fecha')[:5]
+        # 5. Últimos 5 registros
+        ultimos_registros = Registro.objects.select_related('trabajador').order_by('-fecha')[:5]
 
-        # 6. Evolución diaria de ventas (últimos 7 días)
+        # 6. Evolución diaria de registros (últimos 7 días)
         fecha_limite = hoy - timedelta(days=7)
-        evolucion_ventas = Ventas.objects.filter(
+        evolucion_registros = Registro.objects.filter(
             fecha__date__gte=fecha_limite
         ).values('fecha__date').annotate(
-            total=Sum('monto')
+            total=Sum('cantidad')
         ).order_by('fecha__date')
 
-        # Estructura de respuesta
         data = {
             "trabajador_top": {
                 "id": str(trabajador_top.trabajador_id),
                 "nombre": trabajador_top.nombre,
-                "total_ventas": float(trabajador_top.total_ventas),
-                "num_ventas": trabajador_top.num_ventas
+                "total_registros": int(trabajador_top.total_registros),
+                "num_registros": trabajador_top.num_registros
             } if trabajador_top else None,
-            
-            "distribucion_productos": list(distribucion_productos),
-            
-            "ventas_hoy": {
-                "total": float(ventas_hoy['total'] or 0),
-                "cantidad": ventas_hoy['cantidad'] or 0
+
+            "distribucion_registros": list(distribucion_registros),
+
+            "registros_hoy": {
+                "total": int(registros_hoy['total'] or 0),
+                "cantidad": registros_hoy['cantidad'] or 0
             },
-            
-            "meta_mes": {
-                "meta_id": str(meta_mes.metas_id),
-                "objetivo": meta_mes.cantidad_meta,
-                "alcanzado": float(ventas_mes),
-                "porcentaje": min(100, round((ventas_mes / meta_mes.cantidad_meta) * 100, 2)) if meta_mes else 0
-            } if meta_mes else None,
-            
-            "ultimas_ventas": [
+
+            "indicador_mes": {
+                "indicador_id": str(indicador_mes.indicador_id),
+                "objetivo": indicador_mes.meta,
+                "alcanzado": int(registros_mes),
+                "porcentaje": min(100, round((registros_mes / indicador_mes.meta) * 100, 2)) if indicador_mes else 0
+            } if indicador_mes else None,
+
+            "ultimos_registros": [
                 {
-                    "id": str(v.venta_id),
-                    "fecha": v.fecha,
-                    "monto": float(v.monto),
-                    "productos": v.cantidad_productos,
-                    "trabajador": v.trabajador.nombre
-                } for v in ultimas_ventas
+                    "id": str(r.registro_id),
+                    "fecha": r.fecha,
+                    "cantidad": r.cantidad,
+                    "trabajador": r.trabajador.nombre
+                } for r in ultimos_registros
             ],
-            
-            "evolucion_ventas": [
+
+            "evolucion_registros": [
                 {
                     "fecha": item['fecha__date'].strftime("%Y-%m-%d"),
-                    "total": float(item['total'] or 0)
-                } for item in evolucion_ventas
+                    "total": int(item['total'] or 0)
+                } for item in evolucion_registros
             ]
         }
 
         return Response(data)
-    
-# Trabajadores
+
 class TrabajadorListCreate(generics.ListCreateAPIView):
-    queryset = Trabajadores.objects.all()
+    queryset = Trabajador.objects.all()
     serializer_class = TrabajadoresSerializer
 
 class TrabajadorDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Trabajadores.objects.all()
+    queryset = Trabajador.objects.all()
     serializer_class = TrabajadoresSerializer
     lookup_field = 'trabajador_id'
 
-# Ventas
-class VentaListCreate(generics.ListCreateAPIView):
-    queryset = Ventas.objects.all()
-    serializer_class = VentasSerializer
-
-class VentaDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Ventas.objects.all()
-    serializer_class = VentasSerializer
-    lookup_field = 'venta_id'
-
-# Metas
-class MetaListCreate(generics.ListCreateAPIView):
-    queryset = Metas.objects.all()
+class IndicadorListCreate(generics.ListCreateAPIView):
+    queryset = Indicador.objects.all()
     serializer_class = MetasSerializer
 
-class MetaDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Metas.objects.all()
+class IndicadorDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Indicador.objects.all()
     serializer_class = MetasSerializer
-    lookup_field = 'metas_id'
+    lookup_field = 'indicador_id'
+
+class RegistroListCreate(generics.ListCreateAPIView):
+    queryset = Registro.objects.all()
+    serializer_class = RegistrosSerializer
+
+class RegistroDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Registro.objects.all()
+    serializer_class = RegistrosSerializer
+    lookup_field = 'registro_id'
