@@ -14,7 +14,7 @@ En el archivo crud/settings.py existe una lista llamada CORS_ALLOWED_ORIGINS, ah
 # URLs
 Las urls se encuentran en ventas/urls.py
 
-# Ejemplos para obtener ratos
+# Ejemplos
 1. Obtener todos los trabajadores (GET)
 ```js
 import React, { useState, useEffect } from 'react';
