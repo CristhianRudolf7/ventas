@@ -1,3 +1,12 @@
+# Instalar requerimientos
+```bash
+pip install -r requirements.txt
+```
+# Ejecutar el servidor
+```bash
+python manage.py runserver
+```
+
 # Librerias
 Librerias a instalar (pip install):
 - os
