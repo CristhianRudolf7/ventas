@@ -12,8 +12,14 @@ class MetasSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RegistrosSerializer(serializers.ModelSerializer):
-    indicador = serializers.StringRelatedField()
-    trabajador = serializers.StringRelatedField()
+    indicador = serializers.SlugRelatedField(
+        slug_field='nombre',
+        queryset=Indicador.objects.all()
+    )
+    trabajador = serializers.SlugRelatedField(
+        slug_field='nombre',
+        queryset=Trabajador.objects.all()
+    )
 
     class Meta:
         model = Registro
