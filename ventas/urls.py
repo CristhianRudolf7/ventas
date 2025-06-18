@@ -7,12 +7,12 @@ urlpatterns = [
     path('trabajadores/<uuid:trabajador_id>/', views.TrabajadorDetail.as_view()),
     
     # Ventas
-    path('registro/', views.RegistroListCreate.as_view()),
-    path('registro/<uuid:id>/', views.RegistroDetail.as_view()),
+    path('registros/', views.RegistroListCreate.as_view()),
+    path('registros/<uuid:registro_id>/', views.RegistroDetail.as_view()),
     
     # Metas
-    path('indicador/', views.IndicadorListCreate.as_view()),
-    path('indicador/<uuid:id>/', views.IndicadorDetail.as_view()),
+    path('indicadores/', views.IndicadorListCreate.as_view()),
+    path('indicadores/<uuid:indicador_id>/', views.IndicadorDetail.as_view()),
 
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
 ]

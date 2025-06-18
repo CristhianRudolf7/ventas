@@ -33,8 +33,8 @@ class Registro(models.Model):
     registro_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     fecha = models.DateTimeField(blank=True, null=True)
     cantidad = models.PositiveIntegerField()
-    indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, editable=True)
-    trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE, editable=True)
+    indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE)
+    trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'Registros'
