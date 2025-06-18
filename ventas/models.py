@@ -8,6 +8,9 @@ class Trabajador(models.Model):
     class Meta:
         db_table = 'Trabajadores'
 
+    def __str__(self):
+        return self.nombre
+
 class Indicador(models.Model):
     indicador_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nombre = models.CharField(max_length=100)
@@ -23,12 +26,15 @@ class Indicador(models.Model):
     class Meta:
         db_table = 'Indicadores'
 
+    def __str__(self):
+        return self.nombre
+
 class Registro(models.Model):
     registro_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     fecha = models.DateTimeField(blank=True, null=True)
     cantidad = models.PositiveIntegerField()
-    indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, editable=False)
-    trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE, editable=False)
+    indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, editable=True)
+    trabajador = models.ForeignKey(Trabajador, on_delete=models.CASCADE, editable=True)
 
     class Meta:
         db_table = 'Registros'

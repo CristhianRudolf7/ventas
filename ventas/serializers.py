@@ -12,6 +12,9 @@ class MetasSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RegistrosSerializer(serializers.ModelSerializer):
+    indicador = serializers.StringRelatedField()
+    trabajador = serializers.StringRelatedField()
+
     class Meta:
         model = Registro
         fields = '__all__'
