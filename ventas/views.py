@@ -53,29 +53,6 @@ class DashboardView(APIView):
             total=Sum('cantidad')
         ).order_by('fecha__date')
 
-        # 7. Indicadores basados en registros
-        indicadores_activos = Indicador.objects.filter(
-            fecha_inicio__lte=fin_mes,
-            activo=True
-        )
-
-        indicadores_data = []
-        for indicador in indicadores_activos:
-            registros_total = Registro.objects.filter(
-                fecha__range=(inicio_mes, fin_mes),
-                indicador=indicador
-            ).aggregate(total=Sum('cantidad'))['total'] or 0
-
-            porcentaje = min(100, round((registros_total / indicador.meta) * 100, 2)) if indicador.meta > 0 else 0
-
-            indicadores_data.append({
-                "indicador_id": str(indicador.indicador_id),
-                "nombre": indicador.nombre,
-                "objetivo": indicador.meta,
-                "alcanzado": registros_total,
-                "porcentaje": porcentaje
-            })
-
         data = {
             "trabajador_top": {
                 "id": str(trabajador_top.trabajador_id),
@@ -113,11 +90,27 @@ class DashboardView(APIView):
                     "total": int(item['total'] or 0)
                 } for item in evolucion_registros
             ],
-
-            "indicadores": indicadores_data
         }
 
         return Response(data)
+
+class IndicadorVentasView(APIView):
+    def get(self, request):
+        registros = Registro.objects.all()
+
+        indicadores_data = {}
+        for registro in registros:
+            indicador = registro.indicador
+
+            indicadores_data[str(registro.registro_id)] = {
+                "indicador_id": str(indicador.indicador_id),
+                "nombre": indicador.nombre,
+                "meta": indicador.meta,
+                "frecuencia": indicador.frecuencia,
+                "activo": indicador.activo
+            }
+
+        return Response(indicadores_data)
 
 class TrabajadorListCreate(generics.ListCreateAPIView):
     queryset = Trabajador.objects.all()

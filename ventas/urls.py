@@ -13,6 +13,7 @@ urlpatterns = [
     # Metas
     path('indicadores/', views.IndicadorListCreate.as_view()),
     path('indicadores/<uuid:indicador_id>/', views.IndicadorDetail.as_view()),
+    path('indicadores/ventas/', views.IndicadorVentasView.as_view(), name='indicador_ventas'),
 
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
 ]
