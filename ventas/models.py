@@ -38,3 +38,5 @@ class Registro(models.Model):
 
     class Meta:
         db_table = 'Registros'
+
+# indicadores basados en registros

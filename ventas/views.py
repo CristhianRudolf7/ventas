@@ -38,7 +38,8 @@ class DashboardView(APIView):
         ).first()
 
         registros_mes = Registro.objects.filter(
-            fecha__range=(inicio_mes, fin_mes)
+            fecha__range=(inicio_mes, fin_mes),
+            indicador=indicador_mes
         ).aggregate(total=Sum('cantidad'))['total'] or 0
 
         # 5. Últimos 5 registros
@@ -51,6 +52,29 @@ class DashboardView(APIView):
         ).values('fecha__date').annotate(
             total=Sum('cantidad')
         ).order_by('fecha__date')
+
+        # 7. Indicadores basados en registros
+        indicadores_activos = Indicador.objects.filter(
+            fecha_inicio__lte=fin_mes,
+            activo=True
+        )
+
+        indicadores_data = []
+        for indicador in indicadores_activos:
+            registros_total = Registro.objects.filter(
+                fecha__range=(inicio_mes, fin_mes),
+                indicador=indicador
+            ).aggregate(total=Sum('cantidad'))['total'] or 0
+
+            porcentaje = min(100, round((registros_total / indicador.meta) * 100, 2)) if indicador.meta > 0 else 0
+
+            indicadores_data.append({
+                "indicador_id": str(indicador.indicador_id),
+                "nombre": indicador.nombre,
+                "objetivo": indicador.meta,
+                "alcanzado": registros_total,
+                "porcentaje": porcentaje
+            })
 
         data = {
             "trabajador_top": {
@@ -88,7 +112,9 @@ class DashboardView(APIView):
                     "fecha": item['fecha__date'].strftime("%Y-%m-%d"),
                     "total": int(item['total'] or 0)
                 } for item in evolucion_registros
-            ]
+            ],
+
+            "indicadores": indicadores_data
         }
 
         return Response(data)
